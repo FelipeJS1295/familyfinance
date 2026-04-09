@@ -1,0 +1,63 @@
+from datetime import date
+from uuid import UUID
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
+from app.api.v1.dependencies.auth import CurrentUser, CurrentTenant, DB
+from app.db.models.models import Goal
+from app.schemas.goals.schemas import GoalCreate, GoalUpdate, GoalResponse
+
+router = APIRouter()
+
+
+async def _goal_response(goal: Goal) -> GoalResponse:
+    target = float(goal.target_amount)
+    current = 0.0
+    percentage = round(current / target * 100, 1) if target > 0 else 0
+    days_left = (goal.deadline - date.today()).days if goal.deadline else None
+    return GoalResponse(
+        id=goal.id, tenant_id=goal.tenant_id, name=goal.name,
+        description=goal.description, target_amount=goal.target_amount,
+        current_amount=current, percentage=percentage, deadline=goal.deadline,
+        days_left=days_left, icon=goal.icon, color=goal.color,
+        is_completed=goal.is_completed, completed_at=goal.completed_at,
+        created_at=goal.created_at,
+    )
+
+
+@router.get("", response_model=list[GoalResponse])
+async def list_goals(db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    result = await db.execute(
+        select(Goal).where(Goal.tenant_id == current_tenant.id)
+        .order_by(Goal.is_completed, Goal.created_at.desc())
+    )
+    return [await _goal_response(g) for g in result.scalars().all()]
+
+
+@router.post("", response_model=GoalResponse, status_code=201)
+async def create_goal(data: GoalCreate, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    goal = Goal(tenant_id=current_tenant.id, **data.model_dump())
+    db.add(goal)
+    await db.flush()
+    return await _goal_response(goal)
+
+
+@router.patch("/{goal_id}", response_model=GoalResponse)
+async def update_goal(goal_id: UUID, data: GoalUpdate, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    result = await db.execute(select(Goal).where(Goal.id == goal_id).where(Goal.tenant_id == current_tenant.id))
+    goal = result.scalar_one_or_none()
+    if not goal:
+        raise HTTPException(status_code=404, detail="Meta no encontrada.")
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(goal, field, value)
+    await db.flush()
+    return await _goal_response(goal)
+
+
+@router.delete("/{goal_id}", status_code=204)
+async def delete_goal(goal_id: UUID, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    result = await db.execute(select(Goal).where(Goal.id == goal_id).where(Goal.tenant_id == current_tenant.id))
+    goal = result.scalar_one_or_none()
+    if not goal:
+        raise HTTPException(status_code=404, detail="Meta no encontrada.")
+    await db.delete(goal)
