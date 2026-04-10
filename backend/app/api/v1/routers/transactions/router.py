@@ -134,3 +134,50 @@ async def delete_transaction(tx_id: UUID, db: DB, current_user: CurrentUser, cur
     if not tx:
         raise HTTPException(status_code=404, detail="Transacción no encontrada.")
     await db.delete(tx)
+
+@router.get("/summary/monthly-trend")
+async def monthly_trend(
+    db: DB,
+    current_user: CurrentUser,
+    current_tenant: CurrentTenant,
+):
+    """Devuelve ingresos y gastos de los últimos 6 meses para el gráfico de tendencia."""
+    from datetime import date
+    from dateutil.relativedelta import relativedelta
+
+    today = date.today()
+    months = []
+
+    for i in range(5, -1, -1):
+        d = today - relativedelta(months=i)
+        months.append({"month": d.month, "year": d.year, "label": d.strftime("%b")})
+
+    result = []
+    for m in months:
+        income_stmt = (
+            select(func.sum(Transaction.amount))
+            .where(Transaction.tenant_id == current_tenant.id)
+            .where(Transaction.type == TransactionTypeEnum.INCOME)
+            .where(extract("month", Transaction.date) == m["month"])
+            .where(extract("year", Transaction.date) == m["year"])
+        )
+        expense_stmt = (
+            select(func.sum(Transaction.amount))
+            .where(Transaction.tenant_id == current_tenant.id)
+            .where(Transaction.type == TransactionTypeEnum.EXPENSE)
+            .where(extract("month", Transaction.date) == m["month"])
+            .where(extract("year", Transaction.date) == m["year"])
+        )
+        income = float((await db.execute(income_stmt)).scalar_one() or 0)
+        expense = float((await db.execute(expense_stmt)).scalar_one() or 0)
+
+        result.append({
+            "label": m["label"],
+            "month": m["month"],
+            "year": m["year"],
+            "income": income,
+            "expense": expense,
+            "balance": income - expense,
+        })
+
+    return result

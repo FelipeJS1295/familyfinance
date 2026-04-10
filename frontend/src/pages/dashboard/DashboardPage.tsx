@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { TrendingUp, TrendingDown, Wallet, Loader2 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Legend
+} from 'recharts'
 import api from '@/services/api'
 
 function formatCLP(amount: number) {
@@ -9,6 +12,12 @@ function formatCLP(amount: number) {
     currency: 'CLP',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function formatShort(amount: number) {
+  if (Math.abs(amount) >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`
+  if (Math.abs(amount) >= 1000) return `$${(amount / 1000).toFixed(0)}K`
+  return `$${amount}`
 }
 
 export default function DashboardPage() {
@@ -38,6 +47,14 @@ export default function DashboardPage() {
     queryKey: ['budgets', month, year],
     queryFn: async () => {
       const res = await api.get('/budgets', { params: { month, year } })
+      return res.data
+    },
+  })
+
+  const { data: trend } = useQuery({
+    queryKey: ['monthly-trend'],
+    queryFn: async () => {
+      const res = await api.get('/transactions/summary/monthly-trend')
       return res.data
     },
   })
@@ -88,6 +105,71 @@ export default function DashboardPage() {
           <p className="text-lg font-bold text-gray-900">{formatCLP(expense)}</p>
         </div>
       </div>
+
+      {/* Gráfico de tendencia 6 meses */}
+      {trend && trend.length > 0 && (
+        <div className="card">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Tendencia últimos 6 meses</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trend} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={formatShort}
+                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+                width={45}
+              />
+              <Tooltip
+                formatter={(value: number) => formatCLP(value)}
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '12px',
+                }}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
+              />
+              <Line
+                type="monotone"
+                dataKey="income"
+                name="Ingresos"
+                stroke="#10b981"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: '#10b981' }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="expense"
+                name="Gastos"
+                stroke="#ef4444"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: '#ef4444' }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                name="Balance"
+                stroke="#6366f1"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ r: 3, fill: '#6366f1' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Gráfico de torta */}
       {categories?.length > 0 && (
