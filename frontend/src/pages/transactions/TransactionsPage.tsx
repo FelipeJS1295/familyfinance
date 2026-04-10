@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Trash2 } from 'lucide-react'
+import { Plus, Loader2, Trash2, Filter, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,12 +25,22 @@ function formatCLP(amount: number) {
   }).format(amount)
 }
 
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+]
+
 export default function TransactionsPage() {
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
   const now = new Date()
-  const month = now.getMonth() + 1
-  const year = now.getFullYear()
+  const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1)
+  const [filterYear, setFilterYear] = useState(now.getFullYear())
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterMember, setFilterMember] = useState('')
+  const [filterType, setFilterType] = useState('')
 
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,9 +53,12 @@ export default function TransactionsPage() {
   const selectedType = watch('type')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['transactions', month, year],
+    queryKey: ['transactions', filterMonth, filterYear, filterCategory, filterMember, filterType],
     queryFn: async () => {
-      const res = await api.get('/transactions', { params: { month, year } })
+      const params: any = { month: filterMonth, year: filterYear }
+      if (filterCategory) params.category_id = filterCategory
+      if (filterType) params.type = filterType
+      const res = await api.get('/transactions', { params })
       return res.data
     },
   })
@@ -54,6 +67,14 @@ export default function TransactionsPage() {
     queryKey: ['categories'],
     queryFn: async () => {
       const res = await api.get('/tenants/categories')
+      return res.data
+    },
+  })
+
+  const { data: members } = useQuery({
+    queryKey: ['members'],
+    queryFn: async () => {
+      const res = await api.get('/tenants/members')
       return res.data
     },
   })
@@ -96,26 +117,175 @@ export default function TransactionsPage() {
   })
 
   function handleDelete(id: string) {
-    if (window.confirm('¿Estás seguro que quieres eliminar este movimiento? Esta acción no se puede deshacer.')) {
+    if (window.confirm('¿Estás seguro que quieres eliminar este movimiento?')) {
       deleteMutation.mutate(id)
     }
   }
 
+  function clearFilters() {
+    setFilterMonth(now.getMonth() + 1)
+    setFilterYear(now.getFullYear())
+    setFilterCategory('')
+    setFilterMember('')
+    setFilterType('')
+  }
+
+  // Filtrar por miembro en el frontend
+  const filteredItems = data?.items?.filter((tx: any) => {
+    if (filterMember && tx.user?.id !== filterMember) return false
+    return true
+  }) ?? []
+
+  const hasActiveFilters = filterCategory || filterMember || filterType ||
+    filterMonth !== now.getMonth() + 1 || filterYear !== now.getFullYear()
+
+  // Años disponibles
+  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-2xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Total: {data?.total ?? 0} movimientos este mes
-        </p>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo movimiento
-        </button>
+        <div>
+          <p className="text-sm text-gray-500">
+            {filteredItems.length} movimientos
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
+              hasActiveFilters
+                ? 'bg-primary-50 border-primary-200 text-primary-700'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="w-2 h-2 bg-primary-500 rounded-full" />
+            )}
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo
+          </button>
+        </div>
+      </div>
+
+      {/* Panel de filtros */}
+      {showFilters && (
+        <div className="card border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-gray-900">Filtros</h3>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
+              >
+                <X className="w-3 h-3" />
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+
+            {/* Mes */}
+            <div>
+              <label className="label">Mes</label>
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(Number(e.target.value))}
+                className="input text-sm py-2"
+              >
+                {MONTHS.map((m, i) => (
+                  <option key={i} value={i + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Año */}
+            <div>
+              <label className="label">Año</label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(Number(e.target.value))}
+                className="input text-sm py-2"
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tipo */}
+            <div>
+              <label className="label">Tipo</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="input text-sm py-2"
+              >
+                <option value="">Todos</option>
+                <option value="income">Ingresos</option>
+                <option value="expense">Gastos</option>
+              </select>
+            </div>
+
+            {/* Categoría */}
+            <div>
+              <label className="label">Categoría</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="input text-sm py-2"
+              >
+                <option value="">Todas</option>
+                {categories?.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Miembro */}
+            <div className="col-span-2">
+              <label className="label">Miembro</label>
+              <select
+                value={filterMember}
+                onChange={(e) => setFilterMember(e.target.value)}
+                className="input text-sm py-2"
+              >
+                <option value="">Todos los miembros</option>
+                {members?.map((m: any) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Resumen del mes */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center">
+          <p className="text-xs text-gray-400">Ingresos</p>
+          <p className="text-sm font-bold text-green-600">{formatCLP(data?.total_income ?? 0)}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center">
+          <p className="text-xs text-gray-400">Gastos</p>
+          <p className="text-sm font-bold text-red-500">{formatCLP(data?.total_expense ?? 0)}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-3 text-center">
+          <p className="text-xs text-gray-400">Balance</p>
+          <p className={`text-sm font-bold ${(data?.balance ?? 0) >= 0 ? 'text-primary-600' : 'text-red-500'}`}>
+            {formatCLP(data?.balance ?? 0)}
+          </p>
+        </div>
       </div>
 
       {/* Formulario */}
@@ -123,8 +293,6 @@ export default function TransactionsPage() {
         <div className="card border-primary-200 border-2">
           <h3 className="font-semibold text-gray-900 mb-4">Registrar movimiento</h3>
           <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
-
-            {/* Tipo */}
             <div className="flex gap-2">
               <label className="flex-1">
                 <input {...register('type')} type="radio" value="expense" className="sr-only peer" />
@@ -149,12 +317,7 @@ export default function TransactionsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Monto ($)</label>
-                <input
-                  {...register('amount')}
-                  type="number"
-                  placeholder="50000"
-                  className="input"
-                />
+                <input {...register('amount')} type="number" placeholder="50000" className="input" />
                 {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
               </div>
               <div>
@@ -163,7 +326,6 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            {/* Categoría — solo para gasto e ingreso */}
             {selectedType !== 'saving' && (
               <div>
                 <label className="label">Categoría</label>
@@ -178,36 +340,21 @@ export default function TransactionsPage() {
               </div>
             )}
 
-            {/* Meta — solo para ahorro */}
             {selectedType === 'saving' && (
               <div>
-                <label className="label">¿Para qué meta es este ahorro?</label>
+                <label className="label">¿Para qué meta?</label>
                 <select {...register('goal_id')} className="input">
                   <option value="">Selecciona una meta</option>
-                  {goals
-                    ?.filter((g: any) => !g.is_completed)
-                    .map((g: any) => (
-                      <option key={g.id} value={g.id}>
-                        {g.icon} {g.name} — {g.percentage}% completada
-                      </option>
-                    ))}
+                  {goals?.filter((g: any) => !g.is_completed).map((g: any) => (
+                    <option key={g.id} value={g.id}>{g.icon} {g.name} — {g.percentage}%</option>
+                  ))}
                 </select>
-                {goals?.filter((g: any) => !g.is_completed).length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    No tienes metas activas. Crea una en la sección Metas.
-                  </p>
-                )}
               </div>
             )}
 
             <div>
               <label className="label">Nota (opcional)</label>
-              <input
-                {...register('note')}
-                type="text"
-                placeholder="¿En qué gastaste o para qué es?"
-                className="input"
-              />
+              <input {...register('note')} type="text" placeholder="¿En qué gastaste?" className="input" />
             </div>
 
             <div className="flex gap-3">
@@ -229,27 +376,25 @@ export default function TransactionsPage() {
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
           </div>
-        ) : data?.items?.length > 0 ? (
+        ) : filteredItems.length > 0 ? (
           <div className="divide-y divide-gray-50">
-            {data.items.map((tx: any) => (
-              <div key={tx.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+            {filteredItems.map((tx: any) => (
+              <div key={tx.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">
+                  <span className="text-xl">
                     {tx.goal ? tx.goal.icon : tx.category?.icon ?? '💸'}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {tx.goal
-                        ? `Meta: ${tx.goal.name}`
-                        : tx.note || tx.category?.name || 'Sin categoría'}
+                    <p className="text-sm font-medium text-gray-900 truncate max-w-[160px] md:max-w-xs">
+                      {tx.goal ? `Meta: ${tx.goal.name}` : tx.note || tx.category?.name || 'Sin categoría'}
                     </p>
                     <p className="text-xs text-gray-400">
                       {tx.user?.name} · {new Date(tx.date).toLocaleDateString('es-CL')}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className={`font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
                     {tx.type === 'income' ? '+' : '-'}{formatCLP(tx.amount)}
                   </span>
                   <button
@@ -265,8 +410,10 @@ export default function TransactionsPage() {
         ) : (
           <div className="text-center text-gray-400 py-16">
             <p className="text-4xl mb-3">💸</p>
-            <p className="font-medium">Sin movimientos este mes</p>
-            <p className="text-sm mt-1">Registra tu primer gasto o ingreso</p>
+            <p className="font-medium">Sin movimientos</p>
+            <p className="text-sm mt-1">
+              {hasActiveFilters ? 'No hay resultados con estos filtros' : 'Registra tu primer movimiento'}
+            </p>
           </div>
         )}
       </div>
