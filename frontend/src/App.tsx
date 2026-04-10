@@ -22,21 +22,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
-  return !token ? <>{children}</> : <Navigate to="/dashboard" replace />
+  return !token ? <>{children}</> : <Navigate to="/app/dashboard" replace />
 }
 
 export default function App() {
   return (
     <Routes>
-      {/* Landing page — pública */}
       <Route path="/" element={<LandingPage />} />
-
-      {/* Rutas públicas */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/unirse" element={<PublicRoute><JoinPage /></PublicRoute>} />
 
-      {/* Rutas privadas */}
       <Route path="/app" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
