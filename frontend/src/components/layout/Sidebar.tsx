@@ -9,6 +9,7 @@ import {
   Wallet,
   Users,
   Crown,
+  UserCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/services/api'
@@ -20,6 +21,7 @@ const links = [
   { to: '/goals',        icon: Target,          label: 'Metas'         },
   { to: '/members',      icon: Users,           label: 'Miembros'      },
   { to: '/plans',        icon: Crown,           label: 'Planes'        },
+  { to: '/profile',      icon: UserCircle,      label: 'Mi perfil'     },
   { to: '/settings',     icon: Settings,        label: 'Configuración' },
 ]
 

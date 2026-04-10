@@ -11,6 +11,7 @@ import GoalsPage from '@/pages/goals/GoalsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import MembersPage from '@/pages/settings/MembersPage'
 import PlansPage from '@/pages/plans/PlansPage'
+import ProfilePage from '@/pages/settings/ProfilePage'
 import Layout from '@/components/layout/Layout'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="members" element={<MembersPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

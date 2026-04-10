@@ -118,6 +118,47 @@ async def logout(response: Response, db: DB, current_user: CurrentUser, refresh_
 async def get_me(current_user: CurrentUser):
     return UserResponse.model_validate(current_user)
 
+@router.patch("/profile", response_model=UserResponse)
+async def update_profile(
+    data: dict,
+    db: DB,
+    current_user: CurrentUser,
+):
+    """Actualiza nombre y color de avatar del usuario."""
+    if "name" in data and data["name"].strip():
+        current_user.name = data["name"].strip()
+    if "avatar_color" in data and data["avatar_color"]:
+        current_user.avatar_color = data["avatar_color"]
+    await db.flush()
+    return UserResponse.model_validate(current_user)
+
+
+@router.patch("/change-password")
+async def change_password(
+    data: dict,
+    db: DB,
+    current_user: CurrentUser,
+):
+    """Cambia la contraseña del usuario autenticado."""
+    current_password = data.get("current_password", "")
+    new_password = data.get("new_password", "")
+
+    if not verify_password(current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta.",
+        )
+
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña debe tener al menos 8 caracteres.",
+        )
+
+    current_user.password_hash = hash_password(new_password)
+    await db.flush()
+    return {"message": "Contraseña actualizada correctamente."}
+
 
 def _set_refresh_cookie(response: Response, token: str):
     response.set_cookie(
