@@ -95,6 +95,12 @@ export default function TransactionsPage() {
     },
   })
 
+  function handleDelete(id: string) {
+    if (window.confirm('¿Estás seguro que quieres eliminar este movimiento? Esta acción no se puede deshacer.')) {
+      deleteMutation.mutate(id)
+    }
+  }
+
   return (
     <div className="space-y-6">
 
@@ -247,7 +253,7 @@ export default function TransactionsPage() {
                     {tx.type === 'income' ? '+' : '-'}{formatCLP(tx.amount)}
                   </span>
                   <button
-                    onClick={() => deleteMutation.mutate(tx.id)}
+                    onClick={() => handleDelete(tx.id)}
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
