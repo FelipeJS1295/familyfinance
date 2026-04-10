@@ -13,6 +13,7 @@ import SettingsPage from '@/pages/settings/SettingsPage'
 import MembersPage from '@/pages/settings/MembersPage'
 import ProfilePage from '@/pages/settings/ProfilePage'
 import PlansPage from '@/pages/plans/PlansPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 import Layout from '@/components/layout/Layout'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -45,7 +46,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
