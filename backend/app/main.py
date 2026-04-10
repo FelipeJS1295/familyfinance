@@ -15,6 +15,7 @@ from app.api.v1.routers.goals import router as goals_router
 from app.api.v1.routers.tenants import router as tenants_router
 from app.api.v1.routers.notifications import router as notifications_router
 from app.api.v1.routers.imports import router as imports_router
+from app.api.v1.routers.invitations import router as invitations_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.db.session import engine, Base
@@ -59,6 +60,7 @@ app.include_router(budgets_router,       prefix=f"{API_PREFIX}/budgets",       t
 app.include_router(goals_router,         prefix=f"{API_PREFIX}/goals",         tags=["goals"])
 app.include_router(notifications_router, prefix=f"{API_PREFIX}/notifications", tags=["notifications"])
 app.include_router(imports_router,       prefix=f"{API_PREFIX}/imports",       tags=["imports"])
+app.include_router(invitations_router,   prefix=f"{API_PREFIX}/invitations",   tags=["invitations"])
 
 
 @app.get("/health", tags=["health"])

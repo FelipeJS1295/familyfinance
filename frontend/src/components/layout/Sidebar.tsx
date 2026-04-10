@@ -7,16 +7,18 @@ import {
   Settings,
   LogOut,
   Wallet,
+  Users,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/services/api'
 
 const links = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Inicio'        },
-  { to: '/transactions',  icon: ArrowLeftRight,  label: 'Movimientos'   },
-  { to: '/budgets',       icon: PieChart,        label: 'Presupuestos'  },
-  { to: '/goals',         icon: Target,          label: 'Metas'         },
-  { to: '/settings',      icon: Settings,        label: 'Configuración' },
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
+  { to: '/transactions', icon: ArrowLeftRight,  label: 'Movimientos'   },
+  { to: '/budgets',      icon: PieChart,        label: 'Presupuestos'  },
+  { to: '/goals',        icon: Target,          label: 'Metas'         },
+  { to: '/members',      icon: Users,           label: 'Miembros'      },
+  { to: '/settings',     icon: Settings,        label: 'Configuración' },
 ]
 
 export default function Sidebar() {
@@ -46,7 +48,7 @@ export default function Sidebar() {
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">FamilyFinance</p>
+            <p className="font-bold text-gray-900 text-sm">Budly</p>
             <p className="text-xs text-gray-400">Finanzas del hogar</p>
           </div>
         </div>

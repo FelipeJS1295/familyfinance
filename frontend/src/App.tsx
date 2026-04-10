@@ -3,11 +3,13 @@ import { useAuthStore } from '@/store/authStore'
 
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
+import JoinPage from '@/pages/auth/JoinPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import TransactionsPage from '@/pages/transactions/TransactionsPage'
 import BudgetsPage from '@/pages/budgets/BudgetsPage'
 import GoalsPage from '@/pages/goals/GoalsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
+import MembersPage from '@/pages/settings/MembersPage'
 import Layout from '@/components/layout/Layout'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -30,6 +32,9 @@ export default function App() {
       <Route path="/register" element={
         <PublicRoute><RegisterPage /></PublicRoute>
       } />
+      <Route path="/unirse" element={
+        <PublicRoute><JoinPage /></PublicRoute>
+      } />
 
       {/* Rutas privadas */}
       <Route path="/" element={
@@ -41,9 +46,9 @@ export default function App() {
         <Route path="budgets" element={<BudgetsPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="members" element={<MembersPage />} />
       </Route>
 
-      {/* Ruta por defecto */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

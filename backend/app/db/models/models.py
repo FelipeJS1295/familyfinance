@@ -226,3 +226,20 @@ class Notification(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     tenant = relationship("Tenant", back_populates="notifications")
+
+class InvitationCode(Base):
+    __tablename__ = "invitation_codes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    code = Column(String(6), nullable=False, unique=True, index=True)
+    name = Column(String(80), nullable=False)       # Nombre de la persona invitada
+    role = Column(Enum(UserRoleEnum), default=UserRoleEnum.MEMBER)
+    used = Column(Boolean, default=False)
+    used_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    tenant = relationship("Tenant", foreign_keys=[tenant_id])
+    created_by = relationship("User", foreign_keys=[created_by_id])
