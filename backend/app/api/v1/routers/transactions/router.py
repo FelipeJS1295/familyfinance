@@ -25,7 +25,7 @@ async def list_transactions(
         .where(Transaction.tenant_id == current_tenant.id)
         .where(extract("month", Transaction.date) == q_month)
         .where(extract("year", Transaction.date) == q_year)
-        .options(selectinload(Transaction.category), selectinload(Transaction.user))
+        .options(selectinload(Transaction.category), selectinload(Transaction.user), selectinload(Transaction.goal))
         .order_by(Transaction.date.desc(), Transaction.created_at.desc())
     )
 
@@ -64,7 +64,7 @@ async def create_transaction(data: TransactionCreate, db: DB, current_user: Curr
     tx = Transaction(tenant_id=current_tenant.id, user_id=current_user.id, **data.model_dump())
     db.add(tx)
     await db.flush()
-    await db.refresh(tx, ["category", "user"])
+    await db.refresh(tx, ["category", "user", "goal"])
     return TransactionResponse.model_validate(tx)
 
 
@@ -103,7 +103,7 @@ async def summary_by_category(
 async def get_transaction(tx_id: UUID, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
     stmt = (select(Transaction).where(Transaction.id == tx_id)
             .where(Transaction.tenant_id == current_tenant.id)
-            .options(selectinload(Transaction.category), selectinload(Transaction.user)))
+            .options(selectinload(Transaction.category), selectinload(Transaction.user), selectinload(Transaction.goal)))
     result = await db.execute(stmt)
     tx = result.scalar_one_or_none()
     if not tx:
@@ -120,7 +120,7 @@ async def update_transaction(tx_id: UUID, data: TransactionUpdate, db: DB, curre
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(tx, field, value)
     await db.flush()
-    await db.refresh(tx, ["category", "user"])
+    await db.refresh(tx, ["category", "user", "goal"])
     return TransactionResponse.model_validate(tx)
 
 

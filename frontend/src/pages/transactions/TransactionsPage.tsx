@@ -8,10 +8,11 @@ import api from '@/services/api'
 
 const schema = z.object({
   amount: z.coerce.number().positive('El monto debe ser mayor a 0'),
-  type: z.enum(['income', 'expense']),
+  type: z.enum(['income', 'expense', 'saving']),
   date: z.string().min(1, 'Selecciona una fecha'),
   note: z.string().optional(),
   category_id: z.string().optional(),
+  goal_id: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -31,6 +32,16 @@ export default function TransactionsPage() {
   const month = now.getMonth() + 1
   const year = now.getFullYear()
 
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      type: 'expense',
+      date: new Date().toISOString().split('T')[0],
+    },
+  })
+
+  const selectedType = watch('type')
+
   const { data, isLoading } = useQuery({
     queryKey: ['transactions', month, year],
     queryFn: async () => {
@@ -47,19 +58,30 @@ export default function TransactionsPage() {
     },
   })
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      type: 'expense',
-      date: new Date().toISOString().split('T')[0],
+  const { data: goals } = useQuery({
+    queryKey: ['goals'],
+    queryFn: async () => {
+      const res = await api.get('/goals')
+      return res.data
     },
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => api.post('/transactions', data),
+    mutationFn: (data: FormData) => {
+      const payload: any = {
+        amount: data.amount,
+        date: data.date,
+        note: data.note,
+        type: data.type === 'saving' ? 'income' : data.type,
+        category_id: data.type !== 'saving' ? data.category_id : undefined,
+        goal_id: data.type === 'saving' ? data.goal_id : undefined,
+      }
+      return api.post('/transactions', payload)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['summary-category'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
       reset()
       setShowForm(false)
     },
@@ -69,6 +91,7 @@ export default function TransactionsPage() {
     mutationFn: (id: string) => api.delete(`/transactions/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
     },
   })
 
@@ -77,11 +100,9 @@ export default function TransactionsPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-500">
-            Total: {data?.total ?? 0} movimientos este mes
-          </p>
-        </div>
+        <p className="text-sm text-gray-500">
+          Total: {data?.total ?? 0} movimientos este mes
+        </p>
         <button
           onClick={() => setShowForm(!showForm)}
           className="btn-primary flex items-center gap-2"
@@ -111,6 +132,12 @@ export default function TransactionsPage() {
                   💰 Ingreso
                 </div>
               </label>
+              <label className="flex-1">
+                <input {...register('type')} type="radio" value="saving" className="sr-only peer" />
+                <div className="peer-checked:bg-primary-500 peer-checked:text-white bg-gray-100 text-gray-600 text-center py-2.5 rounded-xl cursor-pointer font-medium text-sm transition-all">
+                  🎯 Meta
+                </div>
+              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -127,26 +154,52 @@ export default function TransactionsPage() {
               <div>
                 <label className="label">Fecha</label>
                 <input {...register('date')} type="date" className="input" />
-                {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
               </div>
             </div>
 
-            <div>
-              <label className="label">Categoría</label>
-              <select {...register('category_id')} className="input">
-                <option value="">Sin categoría</option>
-                {categories?.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Categoría — solo para gasto e ingreso */}
+            {selectedType !== 'saving' && (
+              <div>
+                <label className="label">Categoría</label>
+                <select {...register('category_id')} className="input">
+                  <option value="">Sin categoría</option>
+                  {categories
+                    ?.filter((c: any) => selectedType === 'income' ? c.is_income : !c.is_income)
+                    .map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            {/* Meta — solo para ahorro */}
+            {selectedType === 'saving' && (
+              <div>
+                <label className="label">¿Para qué meta es este ahorro?</label>
+                <select {...register('goal_id')} className="input">
+                  <option value="">Selecciona una meta</option>
+                  {goals
+                    ?.filter((g: any) => !g.is_completed)
+                    .map((g: any) => (
+                      <option key={g.id} value={g.id}>
+                        {g.icon} {g.name} — {g.percentage}% completada
+                      </option>
+                    ))}
+                </select>
+                {goals?.filter((g: any) => !g.is_completed).length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    No tienes metas activas. Crea una en la sección Metas.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="label">Nota (opcional)</label>
               <input
                 {...register('note')}
                 type="text"
-                placeholder="¿En qué gastaste?"
+                placeholder="¿En qué gastaste o para qué es?"
                 className="input"
               />
             </div>
@@ -175,10 +228,14 @@ export default function TransactionsPage() {
             {data.items.map((tx: any) => (
               <div key={tx.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{tx.category?.icon ?? '💸'}</span>
+                  <span className="text-2xl">
+                    {tx.goal ? tx.goal.icon : tx.category?.icon ?? '💸'}
+                  </span>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {tx.note || tx.category?.name || 'Sin categoría'}
+                      {tx.goal
+                        ? `Meta: ${tx.goal.name}`
+                        : tx.note || tx.category?.name || 'Sin categoría'}
                     </p>
                     <p className="text-xs text-gray-400">
                       {tx.user?.name} · {new Date(tx.date).toLocaleDateString('es-CL')}

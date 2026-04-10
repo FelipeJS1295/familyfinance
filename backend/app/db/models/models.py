@@ -151,6 +151,7 @@ class Transaction(Base):
     recurrence_parent_id = Column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=True)
     import_id = Column(UUID(as_uuid=True), ForeignKey("bank_imports.id"), nullable=True)
     import_hash = Column(String(64), nullable=True, index=True)
+    goal_id = Column(UUID(as_uuid=True), ForeignKey("goals.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -158,6 +159,7 @@ class Transaction(Base):
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
     bank_import = relationship("BankImport", back_populates="transactions")
+    goal = relationship("Goal", foreign_keys=[goal_id])
 
 
 class Budget(Base):
@@ -193,6 +195,7 @@ class Goal(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     tenant = relationship("Tenant", back_populates="goals")
+    transactions = relationship("Transaction", foreign_keys="Transaction.goal_id", back_populates="goal")
 
 
 class BankImport(Base):

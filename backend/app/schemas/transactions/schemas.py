@@ -21,11 +21,20 @@ class UserMinimal(BaseModel):
     avatar_color: str
 
 
+class GoalMinimal(BaseModel):
+    model_config = {"from_attributes": True}
+    id: UUID
+    name: str
+    icon: str
+    color: str
+
+
 class TransactionCreate(BaseModel):
     amount: Decimal
     type: TransactionTypeEnum
     date: date_type
     category_id: Optional[UUID] = None
+    goal_id: Optional[UUID] = None
     note: Optional[str] = None
     is_recurring: bool = False
     recurrence_rule: Optional[str] = None
@@ -43,6 +52,7 @@ class TransactionUpdate(BaseModel):
     type: Optional[TransactionTypeEnum] = None
     date: Optional[date_type] = None
     category_id: Optional[UUID] = None
+    goal_id: Optional[UUID] = None
     note: Optional[str] = None
     is_recurring: Optional[bool] = None
     recurrence_rule: Optional[str] = None
@@ -61,6 +71,7 @@ class TransactionResponse(BaseModel):
     is_recurring: bool
     recurrence_rule: Optional[str]
     category: Optional[CategoryMinimal]
+    goal: Optional[GoalMinimal]
     user: Optional[UserMinimal]
     created_at: datetime
 
