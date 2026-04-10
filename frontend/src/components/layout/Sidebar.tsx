@@ -15,14 +15,14 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/services/api'
 
 const links = [
-  { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
-  { to: '/transactions', icon: ArrowLeftRight,  label: 'Movimientos'   },
-  { to: '/budgets',      icon: PieChart,        label: 'Presupuestos'  },
-  { to: '/goals',        icon: Target,          label: 'Metas'         },
-  { to: '/members',      icon: Users,           label: 'Miembros'      },
-  { to: '/plans',        icon: Crown,           label: 'Planes'        },
-  { to: '/profile',      icon: UserCircle,      label: 'Mi perfil'     },
-  { to: '/settings',     icon: Settings,        label: 'Configuración' },
+  { to: '/app/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
+  { to: '/app/transactions', icon: ArrowLeftRight,  label: 'Movimientos'   },
+  { to: '/app/budgets',      icon: PieChart,        label: 'Presupuestos'  },
+  { to: '/app/goals',        icon: Target,          label: 'Metas'         },
+  { to: '/app/members',      icon: Users,           label: 'Miembros'      },
+  { to: '/app/plans',        icon: Crown,           label: 'Planes'        },
+  { to: '/app/profile',      icon: UserCircle,      label: 'Mi perfil'     },
+  { to: '/app/settings',     icon: Settings,        label: 'Configuración' },
 ]
 
 export default function Sidebar() {

@@ -8,11 +8,11 @@ import {
 } from 'lucide-react'
 
 const links = [
-  { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'       },
-  { to: '/transactions', icon: ArrowLeftRight,  label: 'Movimientos'  },
-  { to: '/budgets',      icon: PieChart,        label: 'Presupuestos' },
-  { to: '/goals',        icon: Target,          label: 'Metas'        },
-  { to: '/settings',     icon: Settings,        label: 'Más'          },
+  { to: '/app/dashboard',    icon: LayoutDashboard, label: 'Inicio'       },
+  { to: '/app/transactions', icon: ArrowLeftRight,  label: 'Movimientos'  },
+  { to: '/app/budgets',      icon: PieChart,        label: 'Presupuestos' },
+  { to: '/app/goals',        icon: Target,          label: 'Metas'        },
+  { to: '/app/settings',     icon: Settings,        label: 'Más'          },
 ]
 
 export default function BottomNav() {

@@ -3,12 +3,14 @@ import { Bell, Menu } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 
 const titles: Record<string, string> = {
-  '/dashboard':    'Inicio',
-  '/transactions': 'Movimientos',
-  '/budgets':      'Presupuestos',
-  '/goals':        'Metas',
-  '/settings':     'Configuración',
-  '/members':      'Miembros',
+  '/app/dashboard':    'Inicio',
+  '/app/transactions': 'Movimientos',
+  '/app/budgets':      'Presupuestos',
+  '/app/goals':        'Metas',
+  '/app/settings':     'Configuración',
+  '/app/members':      'Miembros',
+  '/app/plans':        'Planes',
+  '/app/profile':      'Mi perfil',
 }
 
 export default function Header() {

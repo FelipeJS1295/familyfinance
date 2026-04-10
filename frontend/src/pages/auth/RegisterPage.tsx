@@ -31,7 +31,7 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/auth/register', data)
       setAuth(res.data.access_token, res.data.user)
-      navigate('/dashboard')
+      navigate('/app/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail ?? 'Error al crear la cuenta')
     }

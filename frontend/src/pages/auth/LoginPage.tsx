@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       const res = await api.post('/auth/login', data)
       setAuth(res.data.access_token, res.data.user)
-      navigate('/dashboard')
+      navigate('/app/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail ?? 'Error al iniciar sesión')
     }
