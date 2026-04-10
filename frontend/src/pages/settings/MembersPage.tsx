@@ -4,6 +4,7 @@ import { Plus, Loader2, Trash2, Copy, Check } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useNavigate } from 'react-router-dom'
 import api from '@/services/api'
 
 const schema = z.object({
@@ -15,9 +16,11 @@ type FormData = z.infer<typeof schema>
 
 export default function MembersPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const [newCode, setNewCode] = useState<string | null>(null)
+  const [planError, setPlanError] = useState('')
 
   const { data: members, isLoading: loadingMembers } = useQuery({
     queryKey: ['members'],
@@ -44,9 +47,18 @@ export default function MembersPage() {
     mutationFn: (data: FormData) => api.post('/invitations/create', data),
     onSuccess: (res) => {
       setNewCode(res.data.code)
+      setPlanError('')
       queryClient.invalidateQueries({ queryKey: ['invitations'] })
       reset()
       setShowForm(false)
+    },
+    onError: (err: any) => {
+      const status = err.response?.status
+      const detail = err.response?.data?.detail ?? 'Error al crear el código'
+      if (status === 402) {
+        setPlanError(detail)
+        setShowForm(false)
+      }
     },
   })
 
@@ -71,6 +83,33 @@ export default function MembersPage() {
   return (
     <div className="space-y-6 max-w-3xl">
 
+      {/* Error de plan */}
+      {planError && (
+        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⭐</span>
+            <div>
+              <p className="font-semibold text-yellow-800 mb-1">Función no disponible en tu plan</p>
+              <p className="text-sm text-yellow-700 mb-3">{planError}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/plans')}
+                  className="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
+                >
+                  Ver planes disponibles
+                </button>
+                <button
+                  onClick={() => setPlanError('')}
+                  className="text-sm text-yellow-600 hover:text-yellow-800"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Código recién creado */}
       {newCode && (
         <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 text-center">
@@ -82,7 +121,9 @@ export default function MembersPage() {
               onClick={() => copyCode(newCode)}
               className="p-3 rounded-xl bg-green-100 hover:bg-green-200 transition"
             >
-              {copiedCode === newCode ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-green-600" />}
+              {copiedCode === newCode
+                ? <Check className="w-5 h-5 text-green-600" />
+                : <Copy className="w-5 h-5 text-green-600" />}
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-4">El código expira en 7 días</p>
@@ -100,7 +141,7 @@ export default function MembersPage() {
             <p className="text-sm text-gray-400">{members?.length ?? 0} personas</p>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => { setShowForm(!showForm); setPlanError('') }}
             className="btn-primary flex items-center gap-2 text-sm"
           >
             <Plus className="w-4 h-4" />
@@ -185,8 +226,7 @@ export default function MembersPage() {
             {invitations.map((inv: any) => (
               <div key={inv.id} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-4">
-                  <div className={`text-2xl font-bold tracking-widest font-mono
-                    ${inv.used ? 'text-gray-300' : 'text-gray-900'}`}>
+                  <div className={`text-2xl font-bold tracking-widest font-mono ${inv.used ? 'text-gray-300' : 'text-gray-900'}`}>
                     {inv.code}
                   </div>
                   <div>
@@ -198,20 +238,14 @@ export default function MembersPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {!inv.used && (
-                    <button
-                      onClick={() => copyCode(inv.code)}
-                      className="p-2 rounded-lg hover:bg-gray-100 transition"
-                    >
+                    <button onClick={() => copyCode(inv.code)} className="p-2 rounded-lg hover:bg-gray-100 transition">
                       {copiedCode === inv.code
                         ? <Check className="w-4 h-4 text-green-500" />
                         : <Copy className="w-4 h-4 text-gray-400" />}
                     </button>
                   )}
                   {!inv.used && (
-                    <button
-                      onClick={() => deleteMutation.mutate(inv.id)}
-                      className="p-2 rounded-lg hover:bg-red-50 transition"
-                    >
+                    <button onClick={() => deleteMutation.mutate(inv.id)} className="p-2 rounded-lg hover:bg-red-50 transition">
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   )}
