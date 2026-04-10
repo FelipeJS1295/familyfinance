@@ -6,3 +6,6 @@ al crear un usuario se envia el codigo y se puede ver en
 
 https://budly.cl/unirse
 
+admin panel
+
+https://admin.budly.cl/

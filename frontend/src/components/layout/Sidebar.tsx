@@ -92,6 +92,14 @@ export default function Sidebar() {
           Cerrar sesión
         </button>
       </div>
+      {/* Copyright */}
+      <div className="px-4 pb-3">
+        <p className="text-[10px] text-gray-300 text-center leading-relaxed">
+          © {new Date().getFullYear()} Budly<br />
+          Creada por Felipe Silva<br />
+          Todos los derechos reservados
+        </p>
+      </div>
     </aside>
   )
 }
