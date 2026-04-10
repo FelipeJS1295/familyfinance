@@ -51,6 +51,9 @@ async def list_goals(db: DB, current_user: CurrentUser, current_tenant: CurrentT
 
 @router.post("", response_model=GoalResponse, status_code=201)
 async def create_goal(data: GoalCreate, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    from app.core.plan_limits import check_goal_limit
+    await check_goal_limit(current_tenant, db)
+
     goal = Goal(tenant_id=current_tenant.id, **data.model_dump())
     db.add(goal)
     await db.flush()

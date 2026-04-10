@@ -8,6 +8,7 @@ import {
   LogOut,
   Wallet,
   Users,
+  Crown,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/services/api'
@@ -18,6 +19,7 @@ const links = [
   { to: '/budgets',      icon: PieChart,        label: 'Presupuestos'  },
   { to: '/goals',        icon: Target,          label: 'Metas'         },
   { to: '/members',      icon: Users,           label: 'Miembros'      },
+  { to: '/plans',        icon: Crown,           label: 'Planes'        },
   { to: '/settings',     icon: Settings,        label: 'Configuración' },
 ]
 

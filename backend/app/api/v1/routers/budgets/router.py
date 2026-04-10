@@ -58,6 +58,9 @@ async def list_budgets(
 
 @router.post("", response_model=BudgetResponse, status_code=201)
 async def create_budget(data: BudgetCreate, db: DB, admin: AdminRequired, current_tenant: CurrentTenant):
+    from app.core.plan_limits import check_budget_limit
+    await check_budget_limit(current_tenant, db)
+
     existing = await db.execute(
         select(Budget).where(and_(
             Budget.tenant_id == current_tenant.id,

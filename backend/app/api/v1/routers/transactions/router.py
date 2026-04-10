@@ -57,6 +57,9 @@ async def list_transactions(
 
 @router.post("", response_model=TransactionResponse, status_code=201)
 async def create_transaction(data: TransactionCreate, db: DB, current_user: CurrentUser, current_tenant: CurrentTenant):
+    from app.core.plan_limits import check_transaction_limit
+    await check_transaction_limit(current_tenant, db)
+
     if data.category_id:
         cat = await db.get(Category, data.category_id)
         if not cat or cat.tenant_id != current_tenant.id:

@@ -10,6 +10,7 @@ import BudgetsPage from '@/pages/budgets/BudgetsPage'
 import GoalsPage from '@/pages/goals/GoalsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import MembersPage from '@/pages/settings/MembersPage'
+import PlansPage from '@/pages/plans/PlansPage'
 import Layout from '@/components/layout/Layout'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -25,28 +26,19 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      {/* Rutas públicas */}
-      <Route path="/login" element={
-        <PublicRoute><LoginPage /></PublicRoute>
-      } />
-      <Route path="/register" element={
-        <PublicRoute><RegisterPage /></PublicRoute>
-      } />
-      <Route path="/unirse" element={
-        <PublicRoute><JoinPage /></PublicRoute>
-      } />
+      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/unirse" element={<PublicRoute><JoinPage /></PublicRoute>} />
 
-      {/* Rutas privadas */}
-      <Route path="/" element={
-        <PrivateRoute><Layout /></PrivateRoute>
-      }>
+      <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="budgets" element={<BudgetsPage />} />
         <Route path="goals" element={<GoalsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
         <Route path="members" element={<MembersPage />} />
+        <Route path="plans" element={<PlansPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

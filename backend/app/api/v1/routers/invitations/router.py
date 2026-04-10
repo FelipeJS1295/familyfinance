@@ -52,6 +52,10 @@ async def create_invitation(
     current_tenant: CurrentTenant,
 ):
     """Admin crea un código de invitación para una persona."""
+
+    from app.core.plan_limits import check_invite_permission
+    check_invite_permission(current_tenant)
+    
     # Verificar límite de usuarios según plan
     result = await db.execute(
         select(User).where(User.tenant_id == current_tenant.id)
